@@ -3,7 +3,7 @@
 ### Scheduled Scraper.py <br/>
 Scrapes data from EthGasStation's API every hour and imports data into "GWEI.csv"
 
-### GWEI.csv <br/>
+### GasGot.csv <br/>
 Stores timestamped data for GWEI costs at 4 different speeds
 
 ### Basic Analysis.py <br/>
