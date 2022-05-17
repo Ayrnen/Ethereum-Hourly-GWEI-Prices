@@ -1,0 +1,178 @@
+---
+title: "FinalProgram-ahb0082"
+author: "Aymen Belakhoua"
+date: "5/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+# Final Report
+
+## GWEI Prices over Time
+
+------
+
+## Import Necessary Packages
+```{r echo=T, results='hide'}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(ggpubr)
+```
+
+## Read CSV
+
+```{r pressure, echo=FALSE}
+setwd(r"(C:\Users\Aymen\Desktop\Intro DS - 3010\Final\Completed)")
+df <- read.csv('GasGot.csv')
+head(df, 5)
+```
+
+## Change Datetime to Hour
+
+```{r}
+df$datetime <- format(as.POSIXct(df$datetime,
+                                 format="%Y-%m-%d %H:%M:%S",
+                                 tz="UTC"),
+                      format = "%H")
+names(df)[names(df)== 'datetime'] <- "hour"
+df <- rename_with(df, toupper)
+head(df, 5)
+```
+
+------
+
+## Plot Density Plot
+
+```{r}
+ggplot(df, aes(x=AVERAGE)) + 
+  geom_histogram(aes(y=..density..), colour="blue", fill="white", binwidth = 10)+
+  geom_density(alpha=.2, fill="#FF6666") +
+  xlim(c(0,200)) + 
+  xlab("Average") +
+  ylab("Density")
+```
+
+The histogram is right skewed, meaning the user will pay more than the mode (most common) price on average.
+
+-----
+
+### Get Mean Median Mode and Standard Deviation of "Average" Gas Price.
+
+```{r}
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+The calculations for the 'Average' Speed's cost for the entire data set are as follows-
+
+* Mean: `r round(mean(df$AVERAGE))`
+
+* Median: `r median(df$AVERAGE)`
+
+* Mode: `r getmode(round(df$AVERAGE))`
+
+* STD: `r round(sd(df$AVERAGE))`
+
+```{r}
+df2 <- read.csv('GasGot.csv')
+df2$datetime <- as.POSIXct(df2$datetime,
+                                 format="%Y-%m-%d %H:%M:%S",
+                                 tz="UTC")
+
+#df2$datetime <- as.numeric(df2$datetime)
+cor(x=as.numeric(df2$datetime), y=df2$average,  method = "pearson", use = "complete.obs")
+
+ggscatter(df2, x = 'datetime', y = 'average', 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Date", ylab = "Average Cost\nGWEI")
+```
+
+The trend line is sloped upwards, however there is a very low linear correlation (.161) so this is not indicative of much.")
+
+-----
+
+## Hourly STD Calculations and Visualization
+
+```{r}
+hours = c()
+std = c()
+for (i in 0:23){
+  hours <- c(hours, i)
+  df2 <- filter(df, as.integer(HOUR) == i)
+  deviation = sd(df2$AVERAGE)
+  std <- c(std, deviation)
+}
+dfSTD <- data.frame(hours, std)
+head(dfSTD)
+
+ggplot(dfSTD, aes(x = hours, y= std)) + geom_point() +
+  geom_hline(yintercept = mean(std))
+```
+
+Average STD: `r round(mean(dfSTD$std))`
+
+There is a significantly high variation in GWEI Price.
+
+-----
+
+### Average GWEI Price Boxplot plotted hourly, ordered by median value, with outliers removed.
+
+```{r}
+ggplot(df, aes(x=reorder(HOUR, AVERAGE), y=AVERAGE)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(y="Average Speed\n(GWEI)", x="Hour", 
+       title="Boxplot: Hours Sorted by Mean") +
+  ylim(0,250)
+```
+
+-----
+
+##Hourly Linear Correlation
+
+```{r}
+df$HOUR <- factor(df$HOUR)
+
+averages <- c()
+hours <-c()
+for (hour in unique(df$HOUR)){
+  hours <- append(hours, hour)
+  averages <- append(x=averages,
+                     value = mean(df[df$HOUR == hour,'AVERAGE']))
+}
+df3 <- list(average = averages, hours = hours)
+df3 <- as.data.frame(df3)
+df3 <- df3[order(averages),]
+
+ggscatter(df3, x = "hours", y = 'average', 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Hours", ylab = "Average")
+```
+
+### Correlation Test
+
+```{r}
+cor.test(as.numeric(df3$hours), df3$average, method=c("pearson", "kendall", "spearman"))
+```
+
+
+With a correlation coefficient of >.5 the model indicates that there is a significant linear association.
+
+-----
+
+## Hourly Linear Regression
+
+```{r}
+model <- lm(as.numeric(average)~as.numeric(hours), df3)
+summary(model)
+```
+
+With an adjusted R-Squared of **.2734** we can see that the hour of the day has a weak effect (low correlation) on the GWEI cost.
+
+With a p value of **.0051** we can confidently reject the null hypothesis.
