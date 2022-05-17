@@ -10,4 +10,4 @@ Stores timestamped data for GWEI costs at 4 different speeds
 Simple visualizations and analysis using matplotlib, numpy, and pandas.
 
 ### Exploratory Analysis <br/>
-RMD/PDF file with intermediate visualizations and data analysis using ggplot, dplyr, tidyverse, ggpubr.
+RMD/MD file with intermediate visualizations and data analysis using ggplot, dplyr, tidyverse, ggpubr.
